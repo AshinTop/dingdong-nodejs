@@ -1,50 +1,51 @@
-# [叮咚买菜自动下单 Nodejs 脚本](https://www.github.com/theajack/dingdong-node)
+# [dingdong-nodejs 叮咚买菜nodejs自动下单脚本](https://github.com/AshinTop/dingdong-nodejs.git)
 
 ## 注意事项
 
-**1. 本项目仅供技术学习和交流，纯属学习使用，不可用作商业行为，任何违法违规造成的问题与本人无关**
+**1. 本项目仅供技术学习和交流，不可用作商业行为，任何违法违规造成的问题与本人无关。**
 
-**2. 不要长时间运行, runInterval时长调长一些，不然有可能账号会被风控，导致无法获取购物车信息。**
+**2. 不可并非太高，不然账号可能会被风控。**
+
 
 ## 0. 前言
 
-2022年初，由于上海疫情告急，出现了全民线上抢菜盛况
+2022年初的上海，买菜也变成一件困难的事情，在所有网购外卖平台大多停罢的当下，叮咚是买菜的唯二选择。
 
-叮咚买菜每6:00，8:30开放让人们睡不好还基本抢不到
+每天5点多起床加购物车，6点狂点下单，最后看着几百的东西就剩二三十，还得蹲守捡漏，这样的日子真的已经够够的了。
 
-于是研究了一下叮咚买菜小程序，搞了这么一个脚本可以自动下单脚本
+早起毁一天，而早起抢购却什么都没买到，更是让人伤心欲绝。
+
+看到有大佬写了叮咚买菜的脚本，本人根据实际体验优化了一下，希望能帮助到和我一样被叮咚伤害的人。
+
 
 **快速开始**
 
 ```
-git clone git@github.com:theajack/dingdong-node.git
-cd dingdong-node
+// 克隆代码
+git clone git@github.com:AshinTop/dingdong-nodejs.git
+
+// install依赖
 npm i
 
-# 按照 2.填入用户配置 自行配置用户信息
+// 填入配置信息
+# 按照 【2.填入用户配置】 自行配置用户信息
 
+// 运行程序
 npm start
 ```
 
 ## 1. 特性
 
 1. 自定义配置（用户相关信息需要自行抓包获取填入）
-2. 下单成功发送提醒邮件，可以像闹钟一样的提醒（需要配置两个邮箱）- 非必需
-3. 支持配置高峰和非高峰策略
-4. 支持配置最长运行时间，防止长时间运行被风控
-4. 定时运行（借助crontab）- 非必需
+2. 支持下单成功的提醒邮件
+3. 支持定时运行
 
 ## 2. 填入用户配置
 
-### 注意事项
+使用 charles 手机抓包, [教程](https://blog.csdn.net/weixin_54789946/article/details/114879602)
 
-1. 本脚本针对的是叮咚买菜小程序，填入用户信息之后请不要再使用其他端，否则信息可能会失效
-2. 使用 charles 抓包, [教程](https://blog.csdn.net/AI_Green/article/details/120168352)
-
-抓包环境安装配置好之后，在叮咚买菜小程序上刷新购物车，找到一条 /cart/index的请求，找 query-string，基本需要的参数都在里面了
-
-```js
-module.exports = {    
+```
+const userConfig = {
     // 叮咚买菜小程序用户信息
     'uid': '',
     'longitude': '',
@@ -54,6 +55,8 @@ module.exports = {
     's_id': '',
     'openid': '',
     'device_token': '',
+    'api_version': '9.49.2', // 如果与抓包到的不一致，换成最新的
+    'app_version': '2.82.4', // 如果与抓包到的不一致，换成最新的
 
     // 以下为邮箱配置 非必需 如果要启动定时发送邮件提醒可以选一下 详情见readme.md
     'fromEmail': '', // 发送邮件的邮箱
@@ -62,72 +65,77 @@ module.exports = {
     'emailHost': 'smtp.qq.com', // 邮箱服务器地址 如非qq邮箱 请自行更改
 
     // 抢菜策略，
+    'isAuto': true, // 是否开启自动监听模式（5:50自动开启，5:58开始下单）,开启后maxTime设置无效
     'runMode': 'traffic', // normal 为非高峰期策略，traffic 为高峰期策略
     'runInterval': 1000, // 每一个请求的轮询间隔
-    'maxTime': 5, // 单次运行最长时间 防止被风控 单位分钟
-
-    'useLogger': false, // 是否开启log，一般为调试使用
+    'maxTime': 5, // 单次运行最长时间 防止被风控 单位为分钟
+    'useLogger': true, // 是否开启logger 调试使用
 };
+
 ```
 
-## 3. 邮件通知 非必需
+## 3. 邮件通知配置（可不配）
 
-邮件通知需要准备两个邮箱，这里以两个QQ邮箱为例
+1. 邮件通知可以选择不配置，不配置则不能发送邮件提醒
 
-另外还需要使用iphone自带的邮件APP
+2. 需要准备发送邮箱和接收邮箱（发送邮箱和接收邮箱可以为同一个）
 
-### 发送邮箱
+3. 接收邮箱可以绑定iphone自带的邮件APP，实现铃声提醒
 
-发送邮箱需要到 设置 => 账户  => 开启 POP3/SMTP服务；
+### 发送邮箱的配置
 
-然后将授权码和邮箱配置到 emailCode 和 fromEmail
+1. 打开发送邮箱的 ‘设置 => 账户  => 开启 POP3/SMTP服务’，复制下授权码
 
-### 接收邮箱
+2. 如果已经开启服务，点击’生成授权码‘获取授权码
 
-接受邮箱需要到 设置 => 账户  => 开启 IMAP/SMTP服务，复制下授权码
+3. 将接收邮箱的授权码和email 配置到 emailCode 和 fromEmail
 
-然后邮件APP绑定QQ邮箱，需要填入授权码
 
-然后将邮箱配置到 toEmail
+### 接收邮箱的配置
+
+1. 打开接受邮箱的 '设置 => 账户  => 开启 IMAP/SMTP服务'，复制下授权码
+
+2. 如果已经开启服务，点击’生成授权码‘获取授权码
+
+3. 打开iphone手机的 '设置 =》 邮件 =》 账户 =》 添加账户'，选择邮箱，输入以下信息
+
+｜ 字段 ｜ 填入内容｜
+｜ --- ｜ --- ｜
+｜ 全名 ｜ 自定义 ｜
+｜ 电子邮件 ｜ 接收邮箱的email ｜
+｜ 密码 ｜ 接收邮件的授权码 ｜
+｜ 描述 ｜ 自定义 ｜
+
+4. 将接收邮箱email 配置到 toEmail
 
 [iphone绑定QQ邮箱教程](https://zhidao.baidu.com/question/1950479000046686868.html?qbl=relate_question_2&word=iphone%D3%CA%BC%FE%D4%F5%C3%B4%CC%ED%BC%D3qq%D3%CA%CF%E4);
 
 另外，如要开启强通知（类似电话铃声），需要在iphone设置里面邮件提示声音
 
-**这个功能搭配服务器定时任务，可以有很多种玩法，比如固定时间给你发送通知，收到评论、回复通知到手机，比一般的APP通知提醒更好，可以像闹钟一样的开启**
 
-## 4. 配置抢菜策略
+## 4. 定时运行（可不配）
 
-见config.js
+Crontab 定时任务，适用于mac和linux
 
-```js
-{
-    'runMode': 'normal', // normal 为非高峰期策略，traffic 为高峰期策略
-    'runInterval': 1000, // 每一个请求的轮询间隔 可以自行修改
-    'maxTime': 5, // 单次运行最长时间 防止被风控 单位分钟
-}
-```
-
-## 5. 定时运行 非必需
-
-以下方案适用于mac和linux，windows系统请自行找方案
-
-命令行运行
+**命令行运行**
 
 ```
 crontab -e
 ```
 
-在vim窗口输入
+**在vim窗口输入**
 
 ```
 {min} {hour} * * * {nodePath} {path}/dingdong-node/main.js
 ```
 
-min和hour表示时间，比如每天5:50开始运行，就是：50 5
+- min和hour表示时间，比如每天5:50开始运行，就是：50 5
 
-nodePath 为你本地node程序的绝对目录
+- nodePath 为你本地node程序的绝对目录
 
-path为当前项目的绝对目录
+- path为当前项目的绝对目录
 
 [定时运行教程](https://www.runoob.com/w3cnote/linux-crontab-tasks.html)
+
+
+
