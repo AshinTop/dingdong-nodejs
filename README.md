@@ -65,7 +65,7 @@ const userConfig = {
     'emailHost': 'smtp.qq.com', // 邮箱服务器地址 如非qq邮箱 请自行更改
 
     // 抢菜策略，
-    'isAuto': true, // 是否开启自动监听模式（5:50自动开启，5:58开始下单）,开启后maxTime设置无效
+    'isAuto': true, // 是否开启自动监听模式（5:55自动开启，5:59开始下单）,开启后maxTime设置无效
     'runMode': 'traffic', // normal 为非高峰期策略，traffic 为高峰期策略
     'runInterval': 1000, // 每一个请求的轮询间隔
     'maxTime': 5, // 单次运行最长时间 防止被风控 单位为分钟

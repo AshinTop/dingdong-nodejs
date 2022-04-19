@@ -102,7 +102,7 @@ async function startTrafficMode () {
     }
     let doNext = !isAuto
     let date = new Date();
-    if (date.getHours() === 5 && date.getMinutes() >= 58) {
+    if (date.getHours() === 5 && date.getMinutes() >= 59 || date.getHours() > 5) {
       doNext = true
     }
     if (cartMap && multiReserveTimeMap && checkOrderMap && doNext) {
@@ -235,15 +235,19 @@ async function main () {
   }
 
   if (isAuto) {
-    logger('开启自动监听模式（5:50自动开启，5:58开始下单）')
+    logger('开启自动监听模式（5:55自动开启，5:59开始下单）')
+    let date = new Date();
     let startTime = setInterval(() => {
-      let date = new Date();
-      if (date.getHours() === 5 && date.getMinutes() >= 50) {
+      if (date.getHours() === 5 && date.getMinutes() >= 55 || date.getHours() > 5) {
         clearInterval(startTime)
         start()
       }
       console.log('等待下单')
-    }, 1000 * 30)
+    }, 1000 * 60)
+    if (date.getHours() === 5 && date.getMinutes() >= 55 || date.getHours() > 5) {
+      clearInterval(startTime)
+      start()
+    }
   } else {
     logger(`开始运行，模式:${UserConfig.runMode}； 时间:${maxTime}`);
     start()
