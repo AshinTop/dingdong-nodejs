@@ -238,13 +238,13 @@ async function main () {
     logger('开启自动监听模式（5:55自动开启，5:59开始下单）')
     let date = new Date();
     let startTime = setInterval(() => {
-      if (date.getHours() === 5 && date.getMinutes() >= 55 || date.getHours() > 5) {
+      if (date.getHours() === 5 && date.getMinutes() >= 55) {
         clearInterval(startTime)
         start()
       }
       console.log('等待下单')
     }, 1000 * 60)
-    if (date.getHours() === 5 && date.getMinutes() >= 55 || date.getHours() > 5) {
+    if (date.getHours() === 5 && date.getMinutes() >= 55) {
       clearInterval(startTime)
       start()
     }
@@ -273,7 +273,7 @@ function onAddOrderSuccess () {
   setTimeout(() => {
     logger(`下单成功结束运行`);
     exit(0);
-  }, 4000);
+  }, 1000);
 }
 
 main();
