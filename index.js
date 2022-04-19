@@ -5,7 +5,7 @@ const log = require('single-line-log').stdout;
 // const log = console.log;
 const { sendEmail, orderEmialInfo } = require('./utils/send-mail');
 const { exit } = require('process');
-const { maxTime, isAuto } = require('./config');
+const { maxTime, isAuto, autoTime } = require('./config');
 const { logger } = require('./utils/logger');
 
 const logControl = (() => {
@@ -102,7 +102,7 @@ async function startTrafficMode () {
     }
     let doNext = !isAuto
     let date = new Date();
-    if (date.getHours() === 5 && date.getMinutes() >= 59 || date.getHours() > 5) {
+    if (date.getHours() === autoTime.doBuy[0] && date.getMinutes() >= autoTime.doBuy[1] || date.getHours() > autoTime.doBuy[0]) {
       doNext = true
     }
     if (cartMap && multiReserveTimeMap && checkOrderMap && doNext) {
@@ -238,13 +238,13 @@ async function main () {
     logger('开启自动监听模式（5:55自动开启，5:59开始下单）')
     let date = new Date();
     let startTime = setInterval(() => {
-      if (date.getHours() === 5 && date.getMinutes() >= 55) {
+      if (date.getHours() === autoTime.start[0] && date.getMinutes() >= autoTime.start[1]) {
         clearInterval(startTime)
         start()
       }
       console.log('等待下单')
     }, 1000 * 60)
-    if (date.getHours() === 5 && date.getMinutes() >= 55) {
+    if (date.getHours() === autoTime.start[0] && date.getMinutes() >= autoTime.start[1]) {
       clearInterval(startTime)
       start()
     }
@@ -273,7 +273,7 @@ function onAddOrderSuccess () {
   setTimeout(() => {
     logger(`下单成功结束运行`);
     exit(0);
-  }, 1000);
+  }, 5000);
 }
 
 main();
