@@ -242,19 +242,18 @@ async function main () {
         clearInterval(startTime)
         start()
       }
-      console.log('等待下单')
     }, 1000 * 60)
     if (date.getHours() === autoTime.start[0] && date.getMinutes() >= autoTime.start[1]) {
       clearInterval(startTime)
       start()
     }
   } else {
-    logger(`开始运行，模式:${UserConfig.runMode}； 时间:${maxTime}`);
     start()
   }
 
 }
 function start () {
+  logger(`开始运行，模式:${UserConfig.runMode}； 时间:${maxTime}`);
   if (UserConfig.runMode === 'normal') {
     startNormalMode();
   } else if (UserConfig.runMode === 'traffic') {
