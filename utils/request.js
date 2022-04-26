@@ -6,7 +6,7 @@ const log = require('single-line-log').stdout;
 const { commonConfig } = require('./common-config');
 
 const { buildGetParam, buildPostData, getDateStr, parseJSON } = require('./util');
-const { runInterval, useLogger } = require('../config');
+const { runInterval, useLogger, maxLoopCount, miniMoney } = require('../config');
 const { orderEmialInfo } = require('./send-mail');
 
 const RequestKeys = {
@@ -57,6 +57,10 @@ const RequestMap = {
         });
         if (useLog) console.log(`获取购物车信息成功: 总价 = ${result.total_money}`);
         orderEmialInfo.price = (`订单总价： ${result.total_money}；`);
+        if (result.total_money < miniMoney) {
+          console.log(`订单总价少于${miniMoney}，请更新购物车`)
+          return null;
+        }
         return result;
       }
       return null;
@@ -247,7 +251,7 @@ function requestBase ({
       }
     }
 
-    if (loop) {
+    if (loop && index < maxLoopCount) {
       setTimeout(() => {
         index++;
         log(`重新请求：${name} 第${index}次`);

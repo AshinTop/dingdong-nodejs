@@ -5,9 +5,9 @@ const log = require('single-line-log').stdout;
 // const log = console.log;
 const { sendEmail, orderEmialInfo } = require('./utils/send-mail');
 const { exit } = require('process');
-const { maxTime, isAuto, autoTime } = require('./config');
+const { maxTime, isAuto, autoTime, miniMoney } = require('./config');
 const { logger } = require('./utils/logger');
-
+let endTimer = null
 const logControl = (() => {
   const keys = Object.values(RequestKeys);
   const logValues = keys.map(() => '');
@@ -39,7 +39,6 @@ async function startTrafficMode () {
   let lastCheckAllStr = '';
   const interval = setInterval(() => {
     // [全选 - 获取购物车信息] - 获取配送信息(cart) - 确认订单(cart, times) - 提交订单(cart, times, check)
-
     if (cartMap === null) {
       requestBase({
         name: RequestKeys.SelectAll,
@@ -106,6 +105,12 @@ async function startTrafficMode () {
       doNext = true
     }
     if (cartMap && multiReserveTimeMap && checkOrderMap && doNext) {
+      if (endTimer === null) {
+        endTimer = setTimeout(() => {
+          logger(`运行定时结束`);
+          exit(0);
+        }, maxTime * 60 * 1000);
+      }
       logControl.log(RequestKeys.AddOrder, '开始下单');
       requestBase(buildAddOrderArgs({
         addressId,
@@ -127,15 +132,21 @@ async function startTrafficMode () {
 async function startNormalMode () {
   const addressId = await getDefaultAddressId(); // 固定地址
   // 全选物品
-  await requestBase({
+  const isseletall = await requestBase({
     name: RequestKeys.SelectAll,
   });
-
+  if (!isseletall) {
+    startNormalMode()
+    return
+  }
   // 获取购物车信息
   const cartMap = await requestBase({
     name: RequestKeys.GetCart,
   });
-
+  if (!cartMap) {
+    startNormalMode()
+    return
+  }
   // 获取配送信息
   // return {reserved_time_start, reserved_time_end}
   const multiReserveTimeMap = await requestBase({
@@ -145,7 +156,10 @@ async function startNormalMode () {
       products: stringObject([cartMap.products])
     },
   });
-
+  if (!multiReserveTimeMap) {
+    startNormalMode()
+    return
+  }
   // 确认订单
   const checkOrderMap = await requestBase({
     name: RequestKeys.CheckOrder,
@@ -156,14 +170,20 @@ async function startNormalMode () {
       ])
     },
   });
-
-  await requestBase(buildAddOrderArgs({
+  if (!checkOrderMap) {
+    startNormalMode()
+    return
+  }
+  const result = await requestBase(buildAddOrderArgs({
     addressId,
     cartMap,
     multiReserveTimeMap,
     checkOrderMap,
   }));
-
+  if (!result) {
+    startNormalMode()
+    return
+  }
   onAddOrderSuccess();
 }
 
@@ -217,36 +237,24 @@ async function getDefaultAddressId () {
   });
 
   logControl.log(RequestKeys.GetAddress, `获取默认地址${addressId ? '成功: ' : '失败'}${addressId}`);
-
   return addressId;
 }
 async function main () {
-  if (!isAuto) {
-    setTimeout(() => {
-      logger(`运行定时结束`);
-      exit(0);
-    }, maxTime * 60 * 1000);
-  }
   if (typeof Object.values(UserConfig).find(v => v === '') !== 'undefined') {
     console.log('请先到config.js中完成所有配置');
     logger(`请先到config.js中完成所有配置`);
     exit(0);
     return;
   }
-
   if (isAuto) {
     logger('开启自动监听模式（5:55自动开启，5:59开始下单）')
-    let date = new Date();
     let startTime = setInterval(() => {
+      let date = new Date();
       if (date.getHours() === autoTime.start[0] && date.getMinutes() >= autoTime.start[1]) {
         clearInterval(startTime)
         start()
       }
-    }, 1000 * 60)
-    if (date.getHours() === autoTime.start[0] && date.getMinutes() >= autoTime.start[1]) {
-      clearInterval(startTime)
-      start()
-    }
+    }, 1000 * 10)
   } else {
     start()
   }
